@@ -1,0 +1,205 @@
+{
+  "bot": {
+    "status": {
+      "type": "STREAMING",
+      "state": "DND",
+      "activity": "DM TO CONTACT ADMIN",
+      "url": "https://twitch.tv/dropbit"
+    },
+    "adminRoles": ["Admin", "Moderator", "Staff"],
+    "developerId": "920165320159813653"
+  },
+  "channels": {
+    "welcome": "1500524684075339949",
+    "logs": "1500525585443717350",
+    "modmail": "1500525585443717350",
+    "verification": "1500524796864237749",
+    "levelUp": "1500525585443717350",
+    "alerts": "1500525585443717350",
+    "inviteTracking": "1500525446805327882"
+  },
+  "roles": {
+    "verified": "1500523571431342170",
+    "unverified": "unverified_role_id_here",
+    "levelRoles": {
+      "1": "1500522576177533058",
+      "5": "1500522510989398056",
+      "10": "1500522440088879265",
+      "20": "1500522209192710154",
+      "25": "level_25_role_id_here",
+      "30": "level_30_role_id_here"
+    },
+    "onboarding": {
+      "beginner": "beginner_role_id_here",
+      "intermediate": "intermediate_role_id_here",
+      "advanced": "advanced_role_id_here",
+      "developer": "developer_role_id_here",
+      "designer": "designer_role_id_here",
+      "gaming": "gaming_role_id_here",
+      "music": "music_role_id_here"
+    }
+  },
+  "welcome": {
+    "enabled": true,
+    "sendDM": true,
+    "embed": {
+      "title": "Welcome to {serverName}!",
+      "description": "Welcome {user}! Please read the rules and verify yourself to access the server.",
+      "color": "#00ff00",
+      "thumbnail": true,
+      "footer": "Member #{memberCount}"
+    },
+    "dmMessage": "Welcome to {serverName}! Please verify yourself in the verification channel to get access to all features."
+  },
+  "verification": {
+    "enabled": true,
+    "timeoutMinutes": 5,
+    "captchaLength": 6,
+    "attempts": 3,
+    "embed": {
+      "title": "Verification Required",
+      "description": "Please complete the verification to access the server. You have {timeoutMinutes} minutes.",
+      "color": "#ffff00"
+    },
+    "successMessage": "✅ Verification successful! You now have access to the server.",
+    "failureMessage": "❌ Verification failed. Please try again or contact an admin."
+  },
+  "leveling": {
+    "enabled": true,
+    "xpPerMessage": {
+      "min": 15,
+      "max": 25
+    },
+    "xpCooldown": 60000,
+    "levelUpMessage": "🎉 Congratulations {user}! You've reached level {level}!",
+    "announceLevelUp": true
+  },
+  "moderation": {
+    "enabled": true,
+    "antiSpam": {
+      "enabled": true,
+      "maxMessages": 5,
+      "timeWindow": 10000,
+      "action": "timeout",
+      "duration": 300000
+    },
+    "antiLink": {
+      "enabled": true,
+      "whitelistedDomains": ["discord.com", "discord.gg", "youtube.com", "twitch.tv"],
+      "action": "delete",
+      "warnUser": true
+    },
+    "wordFilter": {
+      "enabled": true,
+      "blacklistedWords": ["badword1", "badword2", "badword3"],
+      "action": "delete",
+      "warnUser": true
+    },
+    "capsFilter": {
+      "enabled": true,
+      "maxCapsPercentage": 70,
+      "minLength": 10,
+      "action": "delete",
+      "warnUser": true
+    },
+    "duplicateMessages": {
+      "enabled": true,
+      "maxDuplicates": 3,
+      "checkTimeWindow": 30000,
+      "action": "delete",
+      "warnUser": true
+    }
+  },
+  "triggers": {
+    "enabled": true,
+    "caseSensitive": false,
+    "mentionUser": false
+  },
+  "faq": {
+    "enabled": true,
+    "caseSensitive": false,
+    "keywords": {
+      "rules": "Please read the #rules channel for all server guidelines.",
+      "verify": "To verify, go to the #verification channel and complete the captcha.",
+      "help": "For help, DM an admin or use the modmail system.",
+      "commands": "This bot has no public commands. Contact an admin for assistance.",
+      "level": "You gain XP by sending messages. Check your level with the level system."
+    }
+  },
+  "sticky": {
+    "enabled": true,
+    "maxPerChannel": 1,
+    "resendAfterMessages": 10
+  },
+  "invites": {
+    "enabled": true,
+    "trackFakeInvites": true,
+    "rewardInvites": true,
+    "rewards": {
+      "5": "invite_5_role_id_here",
+      "10": "invite_10_role_id_here",
+      "25": "invite_25_role_id_here"
+    }
+  },
+  "modmail": {
+    "enabled": true,
+    "autoResponse": "Your message has been received. A staff member will respond shortly.",
+    "closeAfterInactivity": 3600000,
+    "transcriptChannel": "1500525585443717350"
+  },
+  "antiRaid": {
+    "enabled": true,
+    "joinThreshold": 10,
+    "timeWindow": 60000,
+    "actions": {
+      "enableSlowMode": true,
+      "slowModeDuration": 15,
+      "lockChannels": false,
+      "alertAdmins": true,
+      "autoReset": true,
+      "resetCooldown": 300000
+    }
+  },
+  "onboarding": {
+    "enabled": true,
+    "questions": [
+      {
+        "id": "experience",
+        "question": "What's your experience level with Discord?",
+        "type": "select",
+        "options": [
+          { "label": "Beginner", "value": "beginner", "emoji": "🌱" },
+          { "label": "Intermediate", "value": "intermediate", "emoji": "🌿" },
+          { "label": "Advanced", "value": "advanced", "emoji": "🌳" }
+        ]
+      },
+      {
+        "id": "interests",
+        "question": "What are you interested in?",
+        "type": "select",
+        "options": [
+          { "label": "Development", "value": "developer", "emoji": "💻" },
+          { "label": "Design", "value": "designer", "emoji": "🎨" },
+          { "label": "Gaming", "value": "gaming", "emoji": "🎮" },
+          { "label": "Music", "value": "music", "emoji": "🎵" }
+        ]
+      }
+    ]
+  },
+  "logging": {
+    "enabled": true,
+    "events": [
+      "memberJoin",
+      "memberLeave",
+      "roleAdd",
+      "roleRemove",
+      "messageDelete",
+      "messageEdit",
+      "ban",
+      "kick",
+      "verificationSuccess",
+      "verificationFail",
+      "moderationAction"
+    ]
+  }
+}

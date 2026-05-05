@@ -1,0 +1,32 @@
+{
+  "name": "dropbit-discord-bot",
+  "version": "1.0.0",
+  "description": "Production-ready Discord utility bot with modular architecture",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node main.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "discord.js",
+    "utility"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "canvas": "^2.11.2",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
+    "moment": "^2.30.1",
+    "mongoose": "^8.1.1",
+    "ms": "^2.1.3",
+    "node-cron": "^3.0.3",
+    "svg-captcha": "^1.4.0",
+    "uuid": "^9.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

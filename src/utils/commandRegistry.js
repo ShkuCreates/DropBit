@@ -17,8 +17,14 @@ class CommandRegistry {
       }
       
       const allCommands = Array.from(this.commands.values());
-      await client.application.commands.set(allCommands);
-      console.log(`✅ Registered ${allCommands.length} slash commands`);
+      const guild = client.guilds.cache.get(process.env.GUILD_ID);
+      if (guild) {
+        await guild.commands.set(allCommands);
+        console.log(`✅ Registered ${allCommands.length} slash commands to guild`);
+      } else {
+        await client.application.commands.set(allCommands);
+        console.log(`✅ Registered ${allCommands.length} slash commands globally`);
+      }
     } catch (error) {
       console.error('❌ Failed to register slash commands:', error);
     }

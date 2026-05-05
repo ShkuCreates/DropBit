@@ -25,9 +25,15 @@ class DropbitEngine {
       
       const db = require('./utils/database');
       await db.connect();
+
+      const ProductSeeder = require('./utils/productSeeder');
+      const seeder = new ProductSeeder(db);
+      await seeder.seedSampleProducts();
+      console.log('✅ Products seeded');
       
       this.setupBotStatus();
-      
+      await this.client.login(process.env.FEATURE_BOT_TOKEN);
+
       await this.loadCommands();
       console.log('✅ Commands loaded');
 
@@ -36,8 +42,6 @@ class DropbitEngine {
 
       await this.setupBackgroundJobs();
       console.log('✅ Background jobs setup');
-      
-      this.client.login(process.env.FEATURE_BOT_TOKEN);
       
     } catch (error) {
       console.error('❌ Failed to initialize Dropbit Engine:', error);

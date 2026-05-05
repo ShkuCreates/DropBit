@@ -15,15 +15,18 @@ class FeatureBotCommandRegistry {
       const AdsCommand = require('../commands/ads');
       const TrackCommand = require('../commands/track');
       const UntrackCommand = require('../commands/untrack');
+      const ProductsCommand = require('../commands/products');
 
       const adsCmd = new AdsCommand(client);
       const trackCmd = new TrackCommand(client);
       const untrackCmd = new UntrackCommand(client);
+      const productsCmd = new ProductsCommand(client);
 
       const commands = [
         adsCmd.getSlashCommand(),
         trackCmd.getSlashCommand(),
-        untrackCmd.getSlashCommand()
+        untrackCmd.getSlashCommand(),
+        productsCmd.getSlashCommand()
       ];
 
       await client.application.commands.set(commands);

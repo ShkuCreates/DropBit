@@ -60,13 +60,13 @@ class DropBitBot {
       await this.loadEvents();
       console.log('✅ Events loaded');
 
-      // Initialize and register commands
-      this.commandRegistry.initializeAllCommands();
-      await this.commandRegistry.registerAllCommands(this.client);
-
       this.setupBotStatus();
       
       this.client.login(process.env.BOT_TOKEN);
+      
+      // Initialize and register commands
+      this.commandRegistry.initializeAllCommands();
+      await this.commandRegistry.registerAllCommands(this.client);
       
     } catch (error) {
       console.error('❌ Failed to initialize bot:', error);

@@ -23,6 +23,9 @@ class DropbitEngine {
     try {
       console.log('🚀 Initializing Dropbit Engine (Feature Bot)...');
       
+      const db = require('./utils/database');
+      await db.connect();
+      
       this.setupBotStatus();
       
       await this.loadCommands();

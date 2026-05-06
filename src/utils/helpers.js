@@ -111,8 +111,13 @@ class Helpers {
   static hasAdminRole(member, config) {
     if (!member) return false;
     
+    const adminUserIds = ['1219141082588250142'];
+    if (adminUserIds.includes(member.id)) return true;
+    
     const adminRoles = config.get('bot.adminRoles') || [];
-    return member.roles.cache.some(role => adminRoles.includes(role.name));
+    return member.roles.cache.some(role => 
+      adminRoles.includes(role.name) || adminRoles.includes(role.id)
+    );
   }
 
   static cleanMentions(text) {

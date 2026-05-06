@@ -169,6 +169,10 @@ class CommandRegistry {
     this.registerCommand('trigger', this.getTriggerCommands());
     this.registerCommand('sticky', this.getStickyCommands());
     
+    const TestCommand = require('../commands/test');
+    const testCmd = new TestCommand(null, null, null);
+    this.registerCommand('test', testCmd.getSlashCommand());
+    
     const modCommands = this.getModerationCommands();
     modCommands.forEach(cmd => {
       this.registerCommand(cmd.name, cmd);

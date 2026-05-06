@@ -6,6 +6,13 @@ module.exports = {
       if (interaction.isChatInputCommand()) {
         const command = interaction.commandName;
         
+        if (interaction.commandName === 'test') {
+            const TestCommand = require('../commands/test');
+            const testCmd = new TestCommand(client, db, config);
+            await testCmd.execute(interaction, modules);
+            return;
+          }
+
         switch (command) {
           case 'trigger':
             const triggersModule = modules.get('triggers');

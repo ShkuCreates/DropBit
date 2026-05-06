@@ -1,173 +1,166 @@
 const { EmbedBuilder } = require('discord.js');
 const cron = require('node-cron');
+const https = require('https');
+const http = require('http');
 
 class ProductScheduler {
   constructor(client) {
     this.client = client;
     this.db = require('../utils/database');
     this.db.connect();
-    this.channelId = process.env.FEATURE_BOT_CHANNEL_ID || null;
+    this.channelId = '1500526396961984543';
     this.isRunning = false;
+
+    this.shopifyStores = [
+      'gymshark.com',
+      'allbirds.com',
+      'fashionnova.com',
+      'colourpop.com',
+      'kyliecosmetics.com',
+      'jeffreestarcosmetics.com',
+      'cettire.com',
+      'hiut-denim.co.uk',
+      'tentree.com',
+      'mvmtwatches.com',
+      'puravidabracelets.com',
+      'bombas.com',
+      'brooklinen.com',
+      'beardbrand.com',
+      'meundies.com'
+    ];
   }
 
   async start() {
-    if (!this.channelId) {
-      console.log('⚠️ No channel configured for daily products. Set FEATURE_BOT_CHANNEL_ID in .env');
-      return;
-    }
-
-    // Schedule daily post at 12 AM IST (which is 18:30 UTC the previous day)
-    cron.schedule('30 18 * * *', async () => {
-      await this.postDailyProduct();
+    cron.schedule('0 0 * * *', async () => {
+      await this.findAndPostWinningProduct();
     }, {
       scheduled: true,
-      timezone: "Asia/Kolkata"
+      timezone: 'Asia/Kolkata'
     });
 
     this.isRunning = true;
     console.log('✅ Product scheduler started - Daily posts at 12 AM IST');
-    
-    // Post immediately if testing
+
     if (process.env.NODE_ENV === 'development') {
-      setTimeout(() => this.postDailyProduct(), 5000);
+      setTimeout(() => this.findAndPostWinningProduct(), 5000);
     }
   }
 
-  async postDailyProduct() {
+  async fetchJson(url) {
+    return new Promise((resolve, reject) => {
+      const client = url.startsWith('https') ? https : http;
+      const req = client.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      }, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try { resolve(JSON.parse(data)); }
+          catch { resolve(null); }
+        });
+      });
+      req.on('error', () => resolve(null));
+      req.setTimeout(10000, () => { req.destroy(); resolve(null); });
+    });
+  }
+
+  async fetchProductsFromStore(store) {
+    try {
+      const data = await this.fetchJson(`https://${store}/products.json?limit=20`);
+      if (!data || !data.products) return [];
+      return data.products.map(p => ({
+        title: p.title,
+        url: `https://${store}/products/${p.handle}`,
+        price: p.variants?.[0]?.price || '0',
+        image: p.images?.[0]?.src || null,
+        store,
+        tags: p.tags || [],
+        vendor: p.vendor || store
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  scoreProduct(product) {
+    let score = 0;
+    const title = product.title.toLowerCase();
+    const winningKeywords = [
+      'pro', 'plus', 'elite', 'premium', 'bundle', 'kit',
+      'wireless', 'portable', 'smart', 'led', 'magnetic',
+      'waterproof', 'rechargeable', 'mini', 'ultra'
+    ];
+    winningKeywords.forEach(kw => { if (title.includes(kw)) score += 10; });
+    const price = parseFloat(product.price);
+    if (price >= 20 && price <= 80) score += 30;
+    else if (price >= 10 && price <= 120) score += 15;
+    if (product.image) score += 20;
+    return score;
+  }
+
+  async findAndPostWinningProduct() {
     try {
       const channel = await this.client.channels.fetch(this.channelId);
-      if (!channel) {
-        console.error('❌ Could not find product channel');
+      if (!channel) { console.error('❌ Could not find product channel'); return; }
+
+      console.log('🔍 Searching for winning products...');
+      let allProducts = [];
+
+      const shuffled = this.shopifyStores.sort(() => 0.5 - Math.random()).slice(0, 6);
+      for (const store of shuffled) {
+        const products = await this.fetchProductsFromStore(store);
+        allProducts = allProducts.concat(products);
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      if (allProducts.length === 0) {
+        console.log('⚠️ No products found from stores');
         return;
       }
 
-      // Get a random winning product
-      const product = await this.getWinningProduct();
-      
-      if (!product) {
-        console.log('⚠️ No products available for daily post');
-        return;
-      }
+      const scored = allProducts.map(p => ({ ...p, score: this.scoreProduct(p) }));
+      scored.sort((a, b) => b.score - a.score);
+      const winner = scored[0];
+
+      const price = parseFloat(winner.price);
+      const suggestedSell = (price * 2.5).toFixed(2);
+      const profit = (price * 1.5).toFixed(2);
+
+      const hooks = [
+        `🔥 This ${winner.title} is going viral right now!`,
+        `⚡ Everyone is talking about this ${winner.title}`,
+        `💡 The secret product dropshippers don't want you to know about`,
+        `🚀 This ${winner.title} is changing the game in ${new Date().getFullYear()}`,
+        `💰 High margin potential spotted — don't sleep on this one` 
+      ];
 
       const embed = new EmbedBuilder()
         .setColor(0x000000)
         .setTitle('🏆 WINNING PRODUCT OF THE DAY')
-        .setDescription(`Today's top-performing product that's crushing it!`)
+        .setDescription('> Our system scanned multiple Shopify stores and found today\'s top-performing product with high dropshipping potential.')
         .addFields(
-          {
-            name: '◻️ PRODUCT TITLE',
-            value: product.title,
-            inline: false
-          },
-          {
-            name: '◻️ WHY IT\'S WINNING',
-            value: product.description,
-            inline: false
-          },
-          {
-            name: '◻️ HOOK/ANGLE',
-            value: product.hook,
-            inline: false
-          },
-          {
-            name: '◻️ STRATEGY',
-            value: product.angle,
-            inline: false
-          }
-        )
-        .addFields(
-          {
-            name: '🔗 CHECK IT OUT',
-            value: `[View Product](${product.url})`,
-            inline: false
-          }
+          { name: '◻️ PRODUCT NAME', value: `**${winner.title}**`, inline: false },
+          { name: '◻️ STORE PRICE', value: `$${winner.price}`, inline: true },
+          { name: '◻️ SUGGESTED SELL PRICE', value: `$${suggestedSell}`, inline: true },
+          { name: '◻️ EST. PROFIT/SALE', value: `$${profit}`, inline: true },
+          { name: '◻️ VENDOR', value: winner.vendor, inline: true },
+          { name: '◻️ SOURCE STORE', value: winner.store, inline: true },
+          { name: '◻️ HOOKS TO USE', value: hooks.map((h, i) => `**${i + 1}.** ${h}`).join('\n'), inline: false },
+          { name: '◻️ MARKETING ANGLE', value: '📱 Run UGC-style video ads on TikTok & Instagram Reels\n🎯 Target: 18-35 age group, interests in online shopping\n💬 Use problem-solution format in ad copy', inline: false },
+          { name: '🔗 VIEW PRODUCT', value: `[Click Here to View Product](${winner.url})`, inline: false }
         )
         .setTimestamp()
-        .setFooter({ text: 'Dropbit Engine • Daily Winner' })
-        .setThumbnail('https://media.discordapp.net/attachments/1500527370111680522/1500528696375640114/Dropbit_Banner.png?ex=69f8c3bf&is=69f7723f&hm=ba19b88309ebf73030b2e9f58acd0c3bd8f4f3e1668bab4c9be51f39b66c48bc&=&format=webp&quality=lossless&width=1143&height=457');
+        .setFooter({ text: 'Dropbit Engine • Winning Product System | Scanned from Shopify Stores' });
+
+      if (winner.image) embed.setImage(winner.image);
 
       await channel.send({ embeds: [embed] });
-      
-      // Mark as posted
-      await this.db.updateById('products', product._id, {
-        postedAt: new Date(),
-        isDailyWinner: true
-      });
-
-      console.log(`✅ Posted daily product: ${product.title}`);
+      console.log(`✅ Posted winning product: ${winner.title}`);
 
     } catch (error) {
-      console.error('❌ Error posting daily product:', error);
-    }
-  }
-
-  async getWinningProduct() {
-    try {
-      // Get products that haven't been posted recently
-      const allProducts = await this.db.find('products', {});
-      const products = allProducts.filter(p => p.isDailyWinner !== true);
-
-      if (products.length === 0) {
-        // Reset all products if all have been posted
-        await this.resetDailyWinners();
-        return await this.getWinningProduct();
-      }
-
-      // Select random product
-      const randomIndex = Math.floor(Math.random() * products.length);
-      return products[randomIndex];
-
-    } catch (error) {
-      console.error('Error getting winning product:', error);
-      return null;
-    }
-  }
-
-  async resetDailyWinners() {
-    try {
-      const products = await this.db.find('products', {});
-      
-      for (const product of products) {
-        await this.db.updateById('products', product._id, {
-          isDailyWinner: false,
-          postedAt: null
-        });
-      }
-
-      console.log('✅ Reset all daily winners');
-
-    } catch (error) {
-      console.error('Error resetting daily winners:', error);
-    }
-  }
-
-  async addProduct(title, url, description, hook, angle) {
-    try {
-      const product = await this.db.create('products', {
-        title,
-        url,
-        description,
-        hook,
-        angle,
-        postedAt: null,
-        isDailyWinner: false
-      });
-
-      console.log(`✅ Added product: ${title}`);
-      return product;
-
-    } catch (error) {
-      console.error('Error adding product:', error);
-      return null;
-    }
-  }
-
-  async getProducts() {
-    try {
-      return await this.db.find('products', {});
-    } catch (error) {
-      console.error('Error getting products:', error);
-      return [];
+      console.error('❌ Error finding/posting winning product:', error);
     }
   }
 }

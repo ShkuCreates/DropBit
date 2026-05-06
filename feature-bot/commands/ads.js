@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 
 class AdsCommand {
   constructor(client) {
@@ -9,138 +9,138 @@ class AdsCommand {
 
   async execute(interaction) {
     const productUrl = interaction.options.getString('product_url');
-    
-    if (!productUrl) {
-      await interaction.reply({
-        embeds: [this.createErrorEmbed('Missing URL', 'Please provide a product URL.')],
-        ephemeral: true
-      });
-      return;
-    }
 
-    try {
-      await interaction.deferReply();
-
-      // Generate hooks and scripts
-      const hooks = this.generateHooks(productUrl);
-      const scripts = this.generateAdScripts(productUrl);
-      const angles = this.generateAngles(productUrl);
-
-      const embed = new EmbedBuilder()
-        .setColor(0x000000)
-        .setTitle('🎯 Ad Scripts & Hooks Generator')
-        .setDescription(`Generated content for: ${productUrl}`)
-        .addFields(
-          {
-            name: '🎣 Hooks (5)',
-            value: hooks.map((hook, i) => `${i + 1}. ${hook}`).join('\n'),
-            inline: false
-          },
-          {
-            name: '📝 Ad Scripts (2)',
-            value: scripts.map((script, i) => `**Script ${i + 1}:**\n${script}`).join('\n\n'),
-            inline: false
-          },
-          {
-            name: '🎯 Angles',
-            value: angles.map((angle, i) => `${i + 1}. ${angle}`).join('\n'),
-            inline: false
-          }
+    const modal = new ModalBuilder()
+      .setCustomId(`ads_modal_${interaction.id}_${encodeURIComponent(productUrl)}`)
+      .setTitle('📦 Product Details')
+      .addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('product_name')
+            .setLabel('Product Name')
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder('e.g. Magnetic Phone Holder')
+            .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('product_price')
+            .setLabel('Selling Price (e.g. $29.99)')
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder('e.g. $29.99')
+            .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('target_audience')
+            .setLabel('Target Audience')
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder('e.g. Car owners, 25-45 age, tech lovers')
+            .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('key_benefit')
+            .setLabel('Key Benefit / Main Problem it Solves')
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder('e.g. Keeps phone secure while driving')
+            .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('image_url')
+            .setLabel('Product Image URL (optional)')
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder('https://example.com/image.jpg')
+            .setRequired(false)
         )
-        .setTimestamp()
-        .setFooter({ text: 'Dropbit Engine • Ad Generator' });
+      );
 
-      await interaction.editReply({ embeds: [embed] });
-
-    } catch (error) {
-      console.error('Error in ads command:', error);
-      await interaction.editReply({
-        embeds: [this.createErrorEmbed('Error', 'Failed to generate ad content. Please try again.')],
-        ephemeral: true
-      });
-    }
+    await interaction.showModal(modal);
   }
 
-  generateHooks(url) {
+  async handleModalSubmit(interaction) {
+    if (!interaction.customId.startsWith('ads_modal_')) return false;
+
+    await interaction.deferReply();
+
+    const parts = interaction.customId.split('_');
+    const productUrl = decodeURIComponent(parts[parts.length - 1]);
+    const name = interaction.fields.getTextInputValue('product_name');
+    const price = interaction.fields.getTextInputValue('product_price');
+    const audience = interaction.fields.getTextInputValue('target_audience');
+    const benefit = interaction.fields.getTextInputValue('key_benefit');
+    const imageUrl = interaction.fields.getTextInputValue('image_url') || null;
+
     const hooks = [
-      `This ${this.getProductType(url)} is changing the game...`,
-      `Stop scrolling! You need to see this ${this.getProductType(url)} first.`,
-      `The secret to ${this.getBenefit()}? It's this ${this.getProductType(url)}.`,
-      `99% of people don't know about this ${this.getProductType(url)} yet.`,
-      `Your search for the perfect ${this.getProductType(url)} ends here.`
+      `🔥 Stop scrolling! This ${name} is exactly what you've been looking for.`,
+      `⚡ I found the most underrated product of ${new Date().getFullYear()} — ${name}`,
+      `💡 Tired of ${benefit.toLowerCase().replace('keeps', 'not having')}? This ${name} fixes it.`,
+      `🎯 ${audience.split(',')[0]} are obsessed with this ${name} right now.`,
+      `🚀 This ${name} went from 0 to viral in 3 days — here's why.` 
     ];
 
-    return hooks;
-  }
+    const script1 = `🎬 **AD SCRIPT 1 — Problem/Solution Format**\n\n` +
+      `[HOOK] "${hooks[0]}"\n\n` +
+      `[BODY]\nAre you a ${audience}?\n` +
+      `Then you NEED to ${name}.\n\n` +
+      `It ${benefit} — and it does it better than anything else on the market.\n\n` +
+      `For only ${price}, you get:\n` +
+      `✅ Premium quality build\n` +
+      `✅ Instant results\n` +
+      `✅ 30-day money-back guarantee\n\n` +
+      `[CTA] "Tap to link below before we run out of stock!"`;
 
-  generateAdScripts(url) {
-    const scripts = [
-      `🔥 **LIMITED TIME OFFER** 🔥\n\nJust discovered this amazing ${this.getProductType(url)} that's absolutely game-changing!\n\n✨ **Why you need this:**\n${this.getBenefits()}\n\n⏰ **Hurry!** This won't last long.\n👉 ${url}\n\n#Trending #MustHave`,
-      
-      `💯 **HONEST REVIEW** 💯\n\nI've tried countless ${this.getProductType(url)}s, but this one? 🤯\n\n**What makes it different:**\n${this.getUniqueFeatures()}\n\n**My verdict:** ${this.getVerdict()}\n\nCheck it out: ${url}\n\n#Review #GameChanger`
-    ];
+    const script2 = `🎬 **AD SCRIPT 2 — Social Proof Format**\n\n` +
+      `[HOOK] "${hooks[3]}"\n\n` +
+      `[BODY]\n"I never thought a product could change my life until I tried this ${name}."\n\n` +
+      `Thousands of ${audience} are already using it to ${benefit.toLowerCase()}.\n\n` +
+      `And right now it's only ${price} — but this price WON'T last.\n\n` +
+      `[CTA] "Join 10,000+ happy customers. Order now using the link!"`;
 
-    return scripts;
-  }
+    const embed = new EmbedBuilder()
+      .setColor(0x000000)
+      .setTitle(`🎯 Ad Scripts & Hooks — ${name}`)
+      .setDescription(`> Complete ad content generated for **${name}**. Use these scripts directly on TikTok, Instagram Reels, or Facebook Ads.`)
+      .addFields(
+        {
+          name: '◻️ PRODUCT DETAILS',
+          value: `**Name:** ${name}\n**Price:** ${price}\n**Audience:** ${audience}\n**Benefit:** ${benefit}`,
+          inline: false
+        },
+        {
+          name: '◻️ HOOKS (5)',
+          value: hooks.map((h, i) => `**${i + 1}.** ${h}`).join('\n\n'),
+          inline: false
+        },
+        {
+          name: '◻️ AD SCRIPT 1 — Problem/Solution',
+          value: script1,
+          inline: false
+        },
+        {
+          name: '◻️ AD SCRIPT 2 — Social Proof',
+          value: script2,
+          inline: false
+        },
+        {
+          name: '◻️ MARKETING ANGLES',
+          value: '1. **Scarcity** — "Only 50 units left"\n2. **Social Proof** — "Join 10,000+ customers"\n3. **Problem/Solution** — Lead with pain point\n4. **Authority** — "As seen on TikTok"\n5. **Curiosity** — "The product nobody is talking about"',
+          inline: false
+        },
+        {
+          name: '🔗 PRODUCT LINK',
+          value: `[View Product](${productUrl})`,
+          inline: false
+        }
+      )
+      .setTimestamp()
+      .setFooter({ text: 'Dropbit Engine • Ad Script Generator' });
 
-  generateAngles(url) {
-    const angles = [
-      'Scarcity angle - "Only 3 left in stock"',
-      'Social proof angle - "Join 10,000+ satisfied customers"',
-      'Problem-solution angle - "Tired of [problem]? This solves it instantly"',
-      'Authority angle - "Recommended by industry experts"',
-      'Curiosity angle - "The one thing you\'re missing in your [category]"'
-    ];
+    if (imageUrl) embed.setImage(imageUrl);
 
-    return angles;
-  }
-
-  getProductType(url) {
-    // Simple URL-based product type detection
-    if (url.includes('amazon') || url.includes('shopify')) return 'product';
-    if (url.includes('udemy') || url.includes('coursera')) return 'course';
-    if (url.includes('youtube') || url.includes('tiktok')) return 'content';
-    return 'item';
-  }
-
-  getBenefit() {
-    const benefits = [
-      'saving time and money',
-      'achieving your goals faster',
-      'looking and feeling your best',
-      'staying ahead of the competition',
-      'making smarter decisions'
-    ];
-    
-    return benefits[Math.floor(Math.random() * benefits.length)];
-  }
-
-  getBenefits() {
-    return `• Saves you hours of time\n• Professional quality results\n• Easy to use for beginners\n• 30-day money-back guarantee\n• Join thousands of happy customers`;
-  }
-
-  getUniqueFeatures() {
-    return `• Revolutionary design\n• Premium materials\n• Patent-pending technology\n• Award-winning customer support\n• Eco-friendly packaging`;
-  }
-
-  getVerdict() {
-    const verdicts = [
-      '10/10 - Absolutely worth it!',
-      'This is a game-changer!',
-      'Best purchase I made this year!',
-      'You won\'t regret this!',
-      'Simply outstanding value!'
-    ];
-    
-    return verdicts[Math.floor(Math.random() * verdicts.length)];
-  }
-
-  createErrorEmbed(title, description) {
-    return new EmbedBuilder()
-      .setColor(0xff0000)
-      .setTitle(`❌ ${title}`)
-      .setDescription(description)
-      .setTimestamp();
+    await interaction.editReply({ embeds: [embed] });
+    return true;
   }
 
   getSlashCommand() {
@@ -149,7 +149,7 @@ class AdsCommand {
       .setDescription('Generate ad scripts and hooks for a product')
       .addStringOption(option =>
         option.setName('product_url')
-          .setDescription('The product URL to generate content for')
+          .setDescription('The product URL or image URL')
           .setRequired(true)
       )
       .toJSON();

@@ -34,81 +34,120 @@ class CompetitorTracker {
 
   async checkTracker(tracker) {
     try {
-      const currentContent = await this.fetchPageContent(tracker.url);
-      
-      if (currentContent !== tracker.lastContent) {
-        // Change detected
-        await this.notifyUser(tracker, currentContent);
-        
-        // Update tracker
+      const currentProducts = await this.fetchNewProducts(tracker.url);
+      const previousProducts = JSON.parse(tracker.lastContent || '[]');
+
+      const newProducts = currentProducts.filter(id => !previousProducts.includes(id));
+
+      if (newProducts.length > 0) {
+        const productDetails = await this.fetchNewProductDetails(tracker.url, newProducts);
+        for (const product of productDetails) {
+          await this.notifyUser(tracker, product);
+        }
+
         await this.db.updateById('competitors', tracker._id, {
-          lastContent: currentContent,
+          lastContent: JSON.stringify(currentProducts),
+          productCount: currentProducts.length,
           lastChecked: new Date()
         });
 
-        console.log(`🔄 Change detected for ${tracker.url} - Notified user ${tracker.userId}`);
+        console.log(`� ${newProducts.length} new product(s) found for ${tracker.url}`);
       } else {
-        // No change, just update check time
-        await this.db.updateById('competitors', tracker._id, {
-          lastChecked: new Date()
-        });
+        await this.db.updateById('competitors', tracker._id, { lastChecked: new Date() });
       }
-
     } catch (error) {
       console.error(`❌ Error checking tracker ${tracker.url}:`, error);
     }
   }
 
-  async notifyUser(tracker, newContent) {
+  async notifyUser(tracker, product) {
     try {
       const user = await this.client.users.fetch(tracker.userId);
-      
-      if (!user) {
-        console.error(`❌ Could not find user ${tracker.userId}`);
-        return;
-      }
+      if (!user) return;
 
       const embed = new EmbedBuilder()
         .setColor(0x000000)
-        .setTitle('🔔 Competitor Update Detected!')
-        .setDescription(`Changes detected on the tracked URL`)
+        .setTitle('� Competitor Launched a New Product!')
+        .setDescription(`> Your competitor **${tracker.title}** just listed a brand new product. Be the first to react!`)
         .addFields(
-          {
-            name: '◻️ URL',
-            value: tracker.url,
-            inline: false
-          },
-          {
-            name: '◻️ TITLE',
-            value: tracker.title,
-            inline: false
-          },
-          {
-            name: '◻️ CHANGE TIME',
-            value: new Date().toLocaleString(),
-            inline: false
-          },
-          {
-            name: '◻️ STATUS',
-            value: 'Content has been updated',
-            inline: false
-          }
-        )
-        .addFields(
-          {
-            name: '🔗 VISIT NOW',
-            value: `[Check Changes](${tracker.url})`,
-            inline: false
-          }
+          { name: '◻️ STORE', value: tracker.title, inline: false },
+          { name: '◻️ NEW PRODUCT', value: `**${product.title}**`, inline: false },
+          { name: '◻️ PRICE', value: `$${product.price}`, inline: true },
+          { name: '◻️ VENDOR', value: product.vendor, inline: true },
+          { name: '◻️ DETECTED AT', value: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST', inline: false },
+          { name: '🔗 VIEW PRODUCT', value: `[Click Here to View](${product.url})`, inline: false },
+          { name: '� QUICK ACTIONS', value: '• Source a similar product from AliExpress\n• Create ad content immediately\n• Launch before they scale', inline: false }
         )
         .setTimestamp()
         .setFooter({ text: 'Dropbit Engine • Competitor Tracker' });
 
-      await user.send({ embeds: [embed] });
+      if (product.image) embed.setImage(product.image);
 
+      await user.send({ embeds: [embed] });
     } catch (error) {
       console.error(`❌ Error notifying user ${tracker.userId}:`, error);
     }
+  }
+
+  async fetchNewProducts(url) {
+    try {
+      const { hostname, protocol } = new URL(url);
+      const jsonUrl = `${protocol}//${hostname}/products.json?limit=250`;
+      const https = require('https');
+      const http = require('http');
+      return new Promise((resolve) => {
+        const client = jsonUrl.startsWith('https') ? https : http;
+        const req = client.get(jsonUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0' }
+        }, (res) => {
+          let data = '';
+          res.on('data', chunk => data += chunk);
+          res.on('end', () => {
+            try {
+              const json = JSON.parse(data);
+              resolve((json.products || []).map(p => p.id.toString()));
+            } catch { resolve([]); }
+          });
+        });
+        req.on('error', () => resolve([]));
+        req.setTimeout(10000, () => { req.destroy(); resolve([]); });
+      });
+    } catch { return []; }
+  }
+
+  async fetchNewProductDetails(url, newIds) {
+    try {
+      const { hostname, protocol } = new URL(url);
+      const jsonUrl = `${protocol}//${hostname}/products.json?limit=250`;
+      const https = require('https');
+      const http = require('http');
+      return new Promise((resolve) => {
+        const client = jsonUrl.startsWith('https') ? https : http;
+        const req = client.get(jsonUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0' }
+        }, (res) => {
+          let data = '';
+          res.on('data', chunk => data += chunk);
+          res.on('end', () => {
+            try {
+              const json = JSON.parse(data);
+              const newProducts = (json.products || [])
+                .filter(p => newIds.includes(p.id.toString()))
+                .map(p => ({
+                  title: p.title,
+                  price: p.variants?.[0]?.price || 'N/A',
+                  image: p.images?.[0]?.src || null,
+                  url: `${protocol}//${hostname}/products/${p.handle}`,
+                  vendor: p.vendor || hostname
+                }));
+              resolve(newProducts);
+            } catch { resolve([]); }
+          });
+        });
+        req.on('error', () => resolve([]));
+        req.setTimeout(10000, () => { req.destroy(); resolve([]); });
+      });
+    } catch { return []; }
   }
 
   async fetchPageContent(url) {

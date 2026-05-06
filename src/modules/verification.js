@@ -18,7 +18,7 @@ class VerificationModule {
   async startVerification(member) {
     if (!this.config.get('verification.enabled')) return;
 
-    const verificationChannelId = this.config.get('channels.verification');
+    const verificationChannelId = this.config.get('channels.verification') || '1500524796864237749';
     if (!verificationChannelId) return;
 
     try {
@@ -26,7 +26,7 @@ class VerificationModule {
       if (!verificationChannel) return;
 
       const unverifiedRoleId = this.config.get('roles.unverified');
-      const verifiedRoleId = this.config.get('roles.verified');
+      const verifiedRoleId = this.config.get('roles.verified') || '1500523571431342170';
 
       if (unverifiedRoleId) {
         await member.roles.add(unverifiedRoleId).catch(() => {});
@@ -205,7 +205,7 @@ class VerificationModule {
       await this.db.deleteOne('verification', { userId: member.id });
 
       const unverifiedRoleId = this.config.get('roles.unverified');
-      const verifiedRoleId = this.config.get('roles.verified');
+      const verifiedRoleId = this.config.get('roles.verified') || '1500523571431342170';
 
       if (unverifiedRoleId) {
         await member.roles.remove(unverifiedRoleId).catch(() => {});
@@ -226,7 +226,7 @@ class VerificationModule {
       const activeVerification = this.activeVerifications.get(member.id);
       if (activeVerification) {
         try {
-          const verificationChannelId = this.config.get('channels.verification');
+          const verificationChannelId = this.config.get('channels.verification') || '1500524796864237749';
           const verificationChannel = await this.client.channels.fetch(verificationChannelId);
           if (verificationChannel) {
             const message = await verificationChannel.messages.fetch(activeVerification.messageId);
@@ -273,7 +273,7 @@ class VerificationModule {
       const activeVerification = this.activeVerifications.get(member.id);
       if (activeVerification) {
         try {
-          const verificationChannelId = this.config.get('channels.verification');
+          const verificationChannelId = this.config.get('channels.verification') || '1500524796864237749';
           const verificationChannel = await this.client.channels.fetch(verificationChannelId);
           if (verificationChannel) {
             const message = await verificationChannel.messages.fetch(activeVerification.messageId);

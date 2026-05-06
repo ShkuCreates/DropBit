@@ -113,8 +113,9 @@ class DropbitEngine {
       this.client.user.setPresence({
         status: PresenceUpdateStatus.Online,
         activities: [{
-          name: 'Dropbit System Running',
-          type: ActivityType.Watching
+          name: 'Searching for Winning Products',
+          type: ActivityType.Streaming,
+          url: 'https://www.twitch.tv/dropbit'
         }]
       });
     });

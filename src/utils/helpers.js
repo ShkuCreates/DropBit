@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessageFlags } = require('discord.js');
 const moment = require('moment');
 
 class Helpers {
@@ -7,7 +7,7 @@ class Helpers {
       .setColor(options.color || 0x0099ff)
       .setTitle(options.title)
       .setDescription(options.description)
-      .setTimestamp(options.timestamp !== false)
+      .setTimestamp(options.timestamp !== false ? new Date() : null)
       .setFooter(options.footer ? { text: options.footer } : null)
       .setThumbnail(options.thumbnail ? null : null)
       .setImage(options.image || null);
@@ -147,6 +147,10 @@ class Helpers {
 
   static async sendDM(user, content, options = {}) {
     try {
+      if (options.ephemeral) {
+        options.flags = [MessageFlags.Ephemeral];
+        delete options.ephemeral;
+      }
       await user.send(content, options);
       return true;
     } catch (error) {
